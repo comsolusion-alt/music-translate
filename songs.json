@@ -1,0 +1,14 @@
+[
+  {
+    "id": "1",
+    "title": "Kimi no Todoke",
+    "artist": "Gen",
+    "audio_url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    "lyrics": [
+      {"time": 0, "original": "Music begins...", "id": "Musik dimulai...", "en": "Music begins..."},
+      {"time": 5, "original": "Kaze ga fuku michi de kimi to deatta", "id": "Di jalan tempat angin berhembus, aku bertemu denganmu", "en": "On the wind-blown path, I met you"},
+      {"time": 12, "original": "Kokoro ga takanaru no o osaikirenakute", "id": "Aku tidak bisa menahan debaran di hatiku", "en": "I couldn't hold back my racing heart"},
+      {"time": 20, "original": "We will find our way back home", "id": "Kita akan menemukan jalan pulang", "en": "We will find our way back home"}
+    ]
+  }
+]
