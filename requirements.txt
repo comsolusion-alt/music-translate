@@ -1,2 +1,2 @@
-PyQt6
-PyQt6-Multimedia
+PyQt5
+PyQt5-Multimedia
