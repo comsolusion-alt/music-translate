@@ -4,31 +4,45 @@ import streamlit as st
 
 # Pengaturan Halaman Streamlit
 st.set_page_config(
-    page_title="Music Translator App", page_icon="🎵", layout="centered"
+    page_title="Modern Music & Video Translator", page_icon="🎧", layout="centered"
 )
 
-# Custom Styling CSS untuk mempercantik tampilan slide dan lirik
+# Custom Styling CSS untuk Tampilan Modern & Elegan
 st.markdown(
     """
     <style>
+    .main {
+        background-color: #0f172a;
+        color: #f8fafc;
+    }
     .lyrics-card {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        padding: 30px;
-        border-radius: 15px;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid #334155;
+        padding: 35px;
+        border-radius: 20px;
         text-align: center;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        margin-bottom: 25px;
     }
     .original-text {
-        font-size: 24px;
-        font-weight: bold;
-        color: #2c3e50;
-        margin-bottom: 15px;
+        font-size: 26px;
+        font-weight: 700;
+        color: #f8fafc;
+        margin-bottom: 20px;
+        letter-spacing: -0.025em;
     }
     .translated-text {
-        font-size: 20px;
-        color: #0066cc;
-        font-style: italic;
+        font-size: 22px;
+        color: #38bdf8;
+        font-weight: 500;
+    }
+    .arabic-text {
+        direction: rtl;
+        font-family: 'Amiri', 'Traditional Arabic', sans-serif;
+    }
+    /* Styling Sidebar */
+    .css-1d391kg {
+        background-color: #1e293b;
     }
     </style>
 """,
@@ -36,152 +50,275 @@ st.markdown(
 )
 
 
-# Fungsi untuk memuat lagu lokal dari file songs.json
+# Fungsi untuk memuat data JSON lokal
 @st.cache_data
-def load_local_songs():
+def load_json_songs():
   if os.path.exists("songs.json"):
     with open("songs.json", "r", encoding="utf-8") as f:
       return json.load(f)
   return []
 
 
-st.title("🎵 Pemutar Musik dengan Mode Terjemahan Slide")
-st.write(
-    "Nikmati lagu favorit Anda dengan mode lirik slide interaktif dan pilihan"
-    " sumber data lokal atau online."
+# Fungsi untuk memindai direktori lokal (misal folder 'media/' atau root folder)
+def scan_local_directory(folder_path="."):
+  supported_extensions = (".mp3", ".wav", ".ogg", ".m4a", ".mp4", ".webm", ".mkv")
+  media_files = []
+  if os.path.exists(folder_path):
+    for file in os.listdir(folder_path):
+      if file.lower().endswith(supported_extensions):
+        media_files.append(
+            {
+                "title": os.path.splitext(file)[0].replace("_", " ").title(),
+                "artist": "Local Directory File",
+                "file_path": os.path.join(folder_path, file),
+                "type": (
+                    "video"
+                    if file.lower().endswith((".mp4", ".webm", ".mkv"))
+                    else "audio"
+                ),
+                "lyrics": [
+                    {
+                        "time": 0,
+                        "original": (
+                            "Media playback started from local directory"
+                        ),
+                        "id": "Pemutaran media dimulai dari direktori lokal",
+                        "en": "Media playback started from local directory",
+                        "es": (
+                            "Reproducción de medios iniciada desde el"
+                            " directorio local"
+                        ),
+                        "ar": "بدأ تشغيل الوسائط من الدليل المحلي",
+                    },
+                    {
+                        "time": 5,
+                        "original": (
+                            "Enjoy your music or video with multi-language"
+                            " translation"
+                        ),
+                        "id": (
+                            "Nikmati musik atau video Anda dengan terjemahan"
+                            " multi-bahasa"
+                        ),
+                        "en": (
+                            "Enjoy your music or video with multi-language"
+                            " translation"
+                        ),
+                        "es": (
+                            "Disfruta de tu música o video con traducción en"
+                            " varios idiomas"
+                        ),
+                        "ar": "استمتع بموسيقاك أو فيديو الخاص بك مع الترجمة متعددة اللغات",
+                    },
+                ],
+            }
+        )
+  return media_files
+
+
+# Judul Utama Dashboard
+st.markdown(
+    "<h1 style='text-align: center; color: #38bdf8;'>🎧 Media & Lyrics Translator</h1>",
+    unsafe_allow_html=True,
+)
+st.markdown(
+    "<p style='text-align: center; color: #94a3b8;'>Pemutar Musik & Video Modern"
+    " dengan Dukungan Terjemahan Multi-Bahasa Real-Time</p>",
+    unsafe_allow_html=True,
+)
+st.divider()
+
+# ==================== MENU PENGATURAN MODERN (SIDEBAR) ====================
+st.sidebar.markdown(
+    "### 🎛️ Panel Kontrol", help="Atur sumber media dan bahasa di sini"
 )
 
-# ==================== MENU PENGATURAN (SIDEBAR) ====================
-st.sidebar.header("⚙️ Pengaturan & Sumber Data")
-
-# 1. Pilih Sumber Data (Lokal vs Online/Custom)
-data_source = st.sidebar.radio(
-    "Pilih Sumber Lagu:", options=["Lokal (Database JSON)", "Online (Custom URL)"]
+# 1. Pilih Sumber Data
+source_mode = st.sidebar.radio(
+    "Sumber Media:",
+    options=[
+        "📁 Direktori Lokal (Auto-Scan)",
+        "📜 Database JSON",
+        "🌐 Online (Custom URL)",
+    ],
 )
 
-# 2. Pilihan Bahasa Terjemahan
+# 2. Pilihan Bahasa Terjemahan (Termasuk Bahasa Arab)
 selected_lang = st.sidebar.selectbox(
-    "Pilih Bahasa Terjemahan:",
-    options=["id", "en", "es"],
+    "Bahasa Terjemahan:",
+    options=["id", "en", "es", "ar"],
     format_func=lambda x: {
-        "id": "Bahasa Indonesia",
-        "en": "English",
-        "es": "Español",
+        "id": "🇮🇩 Bahasa Indonesia",
+        "en": "🇬🇧 English",
+        "es": "🇪🇸 Español",
+        "ar": "🇸🇦 العربية (Arabic)",
     }[x],
 )
 
-current_song = {}
+current_media = {}
 
-if data_source == "Lokal (Database JSON)":
-  songs = load_local_songs()
-  if songs:
-    song_titles = [f"{song['title']} - {song['artist']}" for song in songs]
-    selected_song_idx = st.sidebar.selectbox(
-        "Pilih Lagu Lokal:",
-        range(len(song_titles)),
-        format_func=lambda x: song_titles[x],
+# Logika Pengambilan Data Berdasarkan Sumber
+if source_mode == "📁 Direktori Lokal (Auto-Scan)":
+  # Membuat sub-input folder jika ingin menskan folder khusus (default: folder saat ini)
+  target_folder = st.sidebar.text_input(
+      "Nama Folder Direktori",
+      ".",
+      help="Letakkan file mp3/mp4 di folder ini",
+  )
+  local_media_list = scan_local_directory(target_folder)
+
+  if local_media_list:
+    media_titles = [m["title"] for m in local_media_list]
+    selected_idx = st.sidebar.selectbox(
+        "Pilih File Media:", range(len(media_titles)), format_func=lambda x: media_titles[x]
     )
-    current_song = songs[selected_song_idx]
+    current_media = local_media_list[selected_idx]
   else:
-    st.sidebar.warning("File songs.json tidak ditemukan atau kosong.")
+    st.sidebar.warning(
+        "Tidak ditemukan file audio/video (.mp3, .mp4, dll) di direktori"
+        f" '{target_folder}'."
+    )
 
-else:  # Sumber Online / Custom Input
-  st.sidebar.subheader("Masukkan Detail Lagu Online")
-  custom_title = st.sidebar.text_input("Judul Lagu", "Lagu Baru Online")
-  custom_artist = st.sidebar.text_input("Artis", "Nama Artis")
+elif source_mode == "📜 Database JSON":
+  json_songs = load_json_songs()
+  if json_songs:
+    song_titles = [f"{s['title']} - {s['artist']}" for s in json_songs]
+    selected_idx = st.sidebar.selectbox(
+        "Pilih Lagu JSON:", range(len(song_titles)), format_func=lambda x: song_titles[x]
+    )
+    item = json_songs[selected_idx]
+    current_media = {
+        "title": item["title"],
+        "artist": item["artist"],
+        "file_path": item["audio_url"],
+        "type": (
+            "video"
+            if item.get("audio_url", "").lower().endswith((".mp4", ".webm"))
+            else "audio"
+        ),
+        "lyrics": item["lyrics"],
+    }
+  else:
+    st.sidebar.warning(
+        "File 'songs.json' kosong atau tidak ditemukan di direktori."
+    )
+
+else:  # Online / Custom URL
+  st.sidebar.markdown("---")
+  custom_title = st.sidebar.text_input("Judul Media", "Media Streaming Online")
+  custom_artist = st.sidebar.text_input("Kreator / Artis", "Unknown Creator")
+  media_type_choice = st.sidebar.selectbox(
+      "Tipe Media", options=["Audio (MP3/URL)", "Video (MP4/URL)"]
+  )
   custom_url = st.sidebar.text_input(
-      "Link Audio (URL MP3)",
-      "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+      "Link URL Media",
+      (
+          "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+          if "Audio" in media_type_choice
+          else "https://www.w3schools.com/html/mov_bbb.mp4"
+      ),
   )
 
-  # Template lirik default untuk mode online kustom
-  current_song = {
+  current_media = {
       "title": custom_title,
       "artist": custom_artist,
-      "audio_url": custom_url,
+      "file_path": custom_url,
+      "type": "video" if "Video" in media_type_choice else "audio",
       "lyrics": [
           {
               "time": 0,
-              "original": "Welcome to custom online song stream",
-              "id": "Selamat datang di streaming lagu online kustom",
-              "en": "Welcome to custom online song stream",
-              "es": "Bienvenido a la transmisión de canciones en línea",
+              "original": "Online streaming media initialized",
+              "id": "Media streaming online diinisialisasi",
+              "en": "Online streaming media initialized",
+              "es": "Medios de transmisión en línea inicializados",
+              "ar": "تم تهيئة وسائط البث عبر الإنترنت",
           },
           {
               "time": 5,
-              "original": "Enjoy the music and translation mode",
-              "id": "Nikmati musik dan mode terjemahannya",
-              "en": "Enjoy the music and translation mode",
-              "es": "Disfruta de la música y el modo de traducción",
-          },
-          {
-              "time": 10,
-              "original": "Slide through the lyrics seamlessly",
-              "id": "Geser lirik dengan mulus menggunakan mode slide",
-              "en": "Slide through the lyrics seamlessly",
-              "es": "Deslízate por las letras sin problemas",
+              "original": "Navigate through slides to view translated lyrics",
+              "id": (
+                  "Geser slide untuk melihat terjemahan lirik secara interaktif"
+              ),
+              "en": "Navigate through slides to view translated lyrics",
+              "es": "Navega por las diapositivas para ver las letras traducidas",
+              "ar": "تنقل عبر الشرائح لعرض الكلمات المترجمة",
           },
       ],
   }
 
 st.divider()
 
-# ==================== PEMUTAR AUDIO & TAMPILAN SLIDE ====================
-if current_song:
-  st.subheader(f"🎶 {current_song.get('title', 'Tanpa Judul')}")
-  st.markdown(f"**Artis:** {current_song.get('artist', 'Unknown')}")
+# ==================== PEMUTAR MEDIA & TAMPILAN SLIDE MODERN ====================
+if current_media:
+  # Header Info
+  col_info1, col_info2 = st.columns([3, 1])
+  with col_info1:
+    st.markdown(f"### 🎵 {current_media.get('title')}")
+    st.markdown(f"<span style='color: #94a3b8;'>Artis: {current_media.get('artist')}</span>", unsafe_allow_html=True)
+  with col_info2:
+    media_badge = "🎥 Video Player" if current_media.get("type") == "video" else "🎧 Audio Player"
+    st.markdown(f"<div style='text-align: right;'><span style='background: #334155; padding: 6px 12px; border-radius: 8px; font-size: 12px;'>{media_badge}</span></div>", unsafe_allow_html=True)
 
-  # Pemutar Audio
-  audio_url = current_song.get("audio_url", "")
-  if audio_url:
-    st.audio(audio_url)
+  st.write("")
+
+  # Eksekusi Pemutar Media (Audio vs Video)
+  media_source = current_media.get("file_path")
+  if media_source:
+    if current_media.get("type") == "video":
+      st.video(media_source)
+    else:
+      st.audio(media_source)
   else:
-    st.warning("URL Audio tidak valid.")
+    st.warning("Sumber file media tidak ditemukan.")
 
-  st.markdown("### 📜 Mode Terjemahan Slide Lirik")
+  st.markdown("### 📜 Mode Slide Terjemahan Interaktif")
 
-  lyrics_list = current_song.get("lyrics", [])
+  lyrics_list = current_media.get("lyrics", [])
 
   if lyrics_list:
-    # Inisialisasi state untuk navigasi slide
-    if "slide_index" not in st.session_state:
-      st.session_state.slide_index = 0
+    # State manajemen slide
+    if "slide_idx" not in st.session_state:
+      st.session_state.slide_idx = 0
 
-    # Pastikan index slide tidak out of bounds jika ganti lagu
-    if st.session_state.slide_index >= len(lyrics_list):
-      st.session_state.slide_index = 0
+    if st.session_state.slide_idx >= len(lyrics_list):
+      st.session_state.slide_idx = 0
 
-    current_lyric = lyrics_list[st.session_state.slide_index]
+    active_lyric = lyrics_list[st.session_state.slide_idx]
 
-    # Tampilan Kartu Slide Lirik
+    # Cek apakah bahasa target adalah Bahasa Arab untuk menerapkan gaya RTL (Right-to-Left)
+    is_arabic = selected_lang == "ar"
+    extra_class = "arabic-text" if is_arabic else ""
+    translated_content = active_lyric.get(selected_lang, active_lyric.get("en", "Terjemahan tidak tersedia"))
+
+    # Kartu Slide Modern
     st.markdown(
         f"""
         <div class="lyrics-card">
-            <div class="original-text">"{current_lyric['original']}"</div>
-            <div class="translated-text">🌐 {current_lyric.get(selected_lang, current_lyric.get('en', 'Terjemahan tidak tersedia'))}</div>
-            <p style="margin-top: 15px; color: #7f8c8d; font-size: 14px;">Slide {st.session_state.slide_index + 1} dari {len(lyrics_list)}</p>
+            <div class="original-text">"{active_lyric['original']}"</div>
+            <div class="translated-text {extra_class}">🌐 {translated_content}</div>
+            <p style="margin-top: 20px; color: #64748b; font-size: 13px; font-weight: 500;">
+                Slide {st.session_state.slide_idx + 1} dari {len(lyrics_list)}
+            </p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # Tombol Navigasi Slide (Sebelumnya / Selanjutnya)
-    col_prev, col_spacer, col_next = st.columns([1, 2, 1])
+    # Tombol Navigasi Slide Modern
+    c_prev, c_space, c_next = st.columns([1, 2, 1])
 
-    with col_prev:
+    with c_prev:
       if st.button("⬅️ Sebelumnya", use_container_width=True):
-        if st.session_state.slide_index > 0:
-          st.session_state.slide_index -= 1
+        if st.session_state.slide_idx > 0:
+          st.session_state.slide_idx -= 1
           st.rerun()
 
-    with col_next:
+    with c_next:
       if st.button("Selanjutnya ➡️", use_container_width=True):
-        if st.session_state.slide_index < len(lyrics_list) - 1:
-          st.session_state.slide_index += 1
+        if st.session_state.slide_idx < len(lyrics_list) - 1:
+          st.session_state.slide_idx += 1
           st.rerun()
   else:
-    st.info("Tidak ada lirik yang tersedia untuk lagu ini.")
+    st.info("Tidak ada lirik atau teks terjemahan yang tersedia untuk media ini.")
 else:
-  st.info(
-      "Silakan pilih lagu dari menu pengaturan di sidebar untuk mulai memutar."
-  )
+  st.info("Silakan tentukan sumber media melalui panel kontrol di sidebar.")
